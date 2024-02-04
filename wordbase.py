@@ -8,5 +8,6 @@ def get_base(file, taille, fisrt_lettre=None):
     df = list(df[df.str.len() == taille])
     for i in range(len(df)):
         df[i] = unidecode(df[i])
+    df = list(set(df))
 
     return df

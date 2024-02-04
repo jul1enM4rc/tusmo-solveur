@@ -38,17 +38,19 @@ def get_score(mot, guess, motCount=None):
             score[i] = score_presque
     return score
 
+
 def jouer(taille):
     df = list(get_base(file, taille))
 
     mot_cache = rd.choice(df)
     mot_devine = ""
 
-    print(mot_cache[0]+"".join(["_"] * taille))
+    print(mot_cache[0] + "".join(["_"] * taille))
 
-    while mot_devine !=mot_cache:
+    while mot_devine != mot_cache:
         mot_devine = input("nouveau guess :")
         print(get_score(mot_cache, mot_devine))
+
 
 def enlever_mot(ancien, conditions, liste):
     liste_remove = [0] * len(liste)
@@ -64,7 +66,8 @@ def enlever_mot(ancien, conditions, liste):
             elif conditions[j] == 1 and ((lanc not in mot) or (lanc == lettre)):
                 liste_remove[i] = 1
                 break
-            elif conditions[j] == 0 and (mot.count(lanc) > ancien[:j+1].count(lanc)):
+            elif conditions[j] == 0 and (
+                    mot.count(lanc) > sum([1 for t, x in enumerate(ancien) if ((x == lanc) and (conditions[t] > 0))])):
                 liste_remove[i] = 1
                 break
     liste_new = []
@@ -75,43 +78,43 @@ def enlever_mot(ancien, conditions, liste):
     return liste_new
 
 
-def get_proposal(liste_mot):
-    l = len(liste_mot)
+def get_proposal(liste_totale, liste_possible):
+    L = len(liste_totale)
+    l = len(liste_possible)
 
-    tableau = np.full([l, l], np.nan)
 
-    for x in tqdm(range(l), desc='Progress'):
-        motCount = {lettre: liste_mot[x].count(lettre) for lettre in lettres}
+    tableau = np.full([L, l], np.nan)
+
+    for x in tqdm(range(L), desc='Progress'):
+        motCount = {lettre: liste_totale[x].count(lettre) for lettre in lettres}
         for y in range(l):
-            if y <= x:
-                val = sum(get_score(liste_mot[x], liste_mot[y], motCount))
-                tableau[x][y] = val
-                tableau[y][x] = val
+            val = sum(get_score(liste_totale[x], liste_possible[y], motCount))
+            tableau[x][y] = val
 
+    tableau /= len(liste_totale[0]) * score_juste
     moyennes = np.mean(tableau, axis=1)
     index = np.argmax(moyennes)
-
-    return liste_mot[index]
-
-
+    print(moyennes)
+    print(moyennes[index])
+    return liste_totale[index]
 
 
 def main():
     fl = input("première lettre : ")
     taille = int(input('taille : '))
     liste_mot = get_base(file, taille, fl)
+    liste_possible =liste_mot.copy()
     results = [0]
     while statistics.mean(results) != 2:
-        prop = get_proposal(liste_mot)
+        prop = get_proposal(liste_mot, liste_possible)
         print(prop)
         results = input("resultats : ")
 
         results = [int(char) for char in results]
 
-        liste_mot = enlever_mot(prop, results, liste_mot)
-        if prop in liste_mot:
-            liste_mot.remove(prop)
-
+        liste_possible = enlever_mot(prop, results, liste_possible)
+        if prop in liste_possible:
+            liste_possible.remove(prop)
 
 
 if __name__ == "__main__":
